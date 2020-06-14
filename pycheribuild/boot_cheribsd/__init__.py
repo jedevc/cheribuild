@@ -58,6 +58,7 @@ import pexpect
 from ..utils import find_free_port
 from ..config.compilation_targets import CompilationTargets, CrossCompileTarget
 from ..qemu_utils import QemuOptions
+from pycheribuild import boot_cheribsd
 
 SUPPORTED_ARCHITECTURES = {x.generic_suffix: x for x in (CompilationTargets.CHERIBSD_MIPS_NO_CHERI,
                                                          CompilationTargets.CHERIBSD_MIPS_HYBRID,
@@ -258,6 +259,15 @@ class CheriBSDInstance(pexpect.spawn):
         else:
             success(prefix, " successful after ", connection_time, " seconds")
             return True
+
+    def copyout(self, qemu_dir, local_dir):
+        assert self.ssh_port is not None
+        command = ["scp",
+                   "-p", str(self.ssh_port),
+                   "-i", str(self.ssh_private_key),
+                   "{user}@{host}:{remote_dir}".format(user=self.ssh_user, host="localhost", remote_dir=qemu_dir),
+                   local_dir] #todo check destination?
+        boot_cheribsd.run_host_command(command)
 
 
 def info(*args, **kwargs):
@@ -738,12 +748,14 @@ def _do_test_setup(qemu: CheriBSDInstance, args: argparse.Namespace, test_archiv
                 checked_run_cheribsd_command(qemu, mount_command,
                                              error_output="unable to open connection: syserr = ",
                                              pretend_result=0)
+                qemu.smb_failed = False
                 break
             except CheriBSDMatchedErrorOutput as e:
                 # If the smbfs connection timed out try once more. This can happen when multiple libc++ test jobs are
                 # running on the same jenkins slaves so one of them might time out
                 failure("QEMU SMBD failed to mount ", d.in_target, " after ", e.execution_time.total_seconds(),
                     " seconds. Trying ", (MAX_SMBFS_RETRY - trial - 1), " more time(s)", exit=False)
+                qemu.smb_failed = True
                 info("Waiting for 2-10 seconds before retrying mount_smbfs...")
                 if not PRETEND:
                     time.sleep(2 + 8 * random.random())  # wait 2-10 seconds, hopefully the server is less busy then.
