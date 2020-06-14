@@ -58,7 +58,6 @@ import pexpect
 from ..utils import find_free_port
 from ..config.compilation_targets import CompilationTargets, CrossCompileTarget
 from ..qemu_utils import QemuOptions
-from pycheribuild import boot_cheribsd
 
 SUPPORTED_ARCHITECTURES = {x.generic_suffix: x for x in (CompilationTargets.CHERIBSD_MIPS_NO_CHERI,
                                                          CompilationTargets.CHERIBSD_MIPS_HYBRID,
@@ -267,7 +266,7 @@ class CheriBSDInstance(pexpect.spawn):
                    "-i", str(self.ssh_private_key),
                    "{user}@{host}:{remote_dir}".format(user=self.ssh_user, host="localhost", remote_dir=qemu_dir),
                    local_dir] #todo check destination?
-        boot_cheribsd.run_host_command(command)
+        run_host_command(command)
 
 
 def info(*args, **kwargs):
