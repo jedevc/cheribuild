@@ -133,9 +133,9 @@ def run_cheribsd_test(qemu: boot_cheribsd.CheriBSDInstance, args: argparse.Names
             qemu.run("kyua test --results-file=/tmp/results.db -k {}".format(shlex.quote(tests_file)),
                      ignore_cheri_trap=True, cheri_trap_fatal=False, timeout=24 * 60 * 60)
             if i == 0:
-                results_db = Path("/test-results/test-results.db")
+                results_db = Path("test-results/test-results.db")
             else:
-                results_db = Path("/test-results/test-results-{}.db".format(i))
+                results_db = Path("test-results/test-results-{}.db".format(i))
             results_xml = results_db.with_suffix(".xml")
             assert shlex.quote(str(results_db)) == str(results_db), "Should not contain any special chars"
             if qemu.smb_failed:
